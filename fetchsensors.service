@@ -1,0 +1,15 @@
+[Unit]
+Description=Fetch sensors
+After=syslog.target
+
+[Service]
+Type=simple
+WorkingDirectory=/usr/local/bin
+ExecStart=/usr/local/bin/fetchsensors.py
+StandardOutput=/var/log/sensors.log
+StandardError=/var/log/sensors.err
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
