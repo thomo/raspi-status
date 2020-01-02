@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3 -u
 
 # Copyright (c) 2017 Adafruit Industries
 # Author: Tony DiCola & James DeVito
