@@ -62,7 +62,7 @@ def readDS18B20(sensor):
 
         sensor['error'] = {}
     except:
-        exc_type, exc_value, exc_tb = sys.exc_info()
+        exc_type, exc_value, _1 = sys.exc_info()
         sensor['error'] = { 'type': exc_type, 'value': exc_value }
 
 def readSI7021(bus, sensor):
@@ -79,7 +79,7 @@ def readSI7021(bus, sensor):
 
         sensor['error'] = {}
     except:
-        exc_type, exc_value, exc_tb = sys.exc_info()
+        exc_type, exc_value, _1 = sys.exc_info()
         sensor['error'] = { 'type': exc_type, 'value': exc_value }
 
 next_reading = time.time() 
