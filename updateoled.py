@@ -38,6 +38,15 @@ DC = 23
 SPI_PORT = 0
 SPI_DEVICE = 0
 
+def draw_center(d, y, msg):
+    w, _1 = d.textsize(msg)
+    d.text(((128-w)/2, y), msg, font=font, fill=255)
+
+def draw_celsius(d, x, y):
+    d.ellipse((x, y+2, x+3, y+2+3), outline=255, fill=0)
+    d.text((x+5, y), "C",  font=font, fill=255)
+
+
 # 128x64 display with hardware I2C:
 disp = Adafruit_SSD1306.SSD1306_128_64(rst=RST)
 
@@ -60,9 +69,9 @@ draw.rectangle((0,0,width,height), outline=0, fill=0)
 
 # Draw some shapes.
 # First define some constants to allow easy resizing of shapes.
-padding = -2
+padding = 0
 top = padding
-lineheight = 10
+lineheight = 12
 bottom = height-padding
 # Move left to right keeping track of the current x position for drawing shapes.
 x = 0
@@ -76,36 +85,49 @@ while True:
     draw.rectangle((0,0,width,height), outline=0, fill=0)
 
     # Shell scripts for system monitoring from here : https://unix.stackexchange.com/questions/119126/command-to-display-memory-usage-disk-usage-and-cpu-load
-    cmd = "hostname -I | cut -d\' \' -f1"
-    IP = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
+    # cmd = "hostname -I | cut -d\' \' -f1"
+    # IP = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
     cmd = "top -bn1 | grep load | awk '{printf \"C: %.2f\", $(NF-2)}'"
     CPU = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
     cmd = "free -m | awk 'NR==2{printf \"M: %.0f%%\", $3*100/$2 }'"
     MemUsage = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
     cmd = "df -h | awk '$NF==\"/\"{printf \"D: %s\", $5}'"
     Disk = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
+
     cmd = "uptime| sed -E 's/^[^,]*up *//; s/, *[[:digit:]]* users?.*//; s/days/d/; s/ ?([[:digit:]]+):0?([[:digit:]]+)/\\1 h, \\2 m/'"
     Up = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
-    cmd = "grep 'temperature,location=ttnbox' /var/log/sensors.log | tail -1 | cut -d ' ' -f2| cut -d = -f2"
+
+    cmd = "grep 'temperature,location=ttnbox' /var/log/sensors.log | tail -1 | awk -F= '{printf \"%.1f\", $NF}'| tr -d '\n'"
     T_in = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
-    cmd = "grep 'temperature,location=attic' /var/log/sensors.log | tail -1 | cut -d ' ' -f2| cut -d = -f2"
+    cmd = "grep 'temperature,location=attic' /var/log/sensors.log | tail -1 | awk -F= '{printf \"%.1f\", $NF}'| tr -d '\n'"
     T_out = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
 
-    cmd = "curl -s http://noc.thethingsnetwork.org:8085/api/v2/gateways/eui-b827ebfffe06902a | jq '.timestamp'"
+    cmd = "curl -s http://noc.thethingsnetwork.org:8085/api/v2/gateways/eui-b827ebfffe06902a | jq -r '.timestamp'"
     TTNts = parse(subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout)
     TTNts = TTNts.astimezone(timezone('Europe/Berlin'))
 
     # Write text
     y = top
-    draw.text((x, y), "Up: " + str(Up),  font=font, fill=255)
-    y += lineheight
-    draw.text((x, y), "IP: " + str(IP),  font=font, fill=255)
+    draw_center(draw, y, "Up: " + str(Up))
+    # y += lineheight
+    # draw.text((x, y), "IP: " + str(IP),  font=font, fill=255)
     y += lineheight
     draw.text((x, y), str(CPU) + " " + str(MemUsage) + " " + str(Disk), font=font, fill=255)
+    
     y += lineheight
-    draw.text((x, y), "Box: " + str(T_in) + u"\u2103  Loft: " + str(T_out) + u"\u2103",  font=font, fill=255)
+    msg = "In:" + str(T_in)
+    w, _1 = draw.textsize(msg)
+    draw.text((x, y), msg,  font=font, fill=255)
+    draw_celsius(draw, x+1+w, y)
+    msg = "Out:" + str(T_out)
+    w, _1 = draw.textsize(msg)
+    draw.text((64, y), msg,  font=font, fill=255)
+    draw_celsius(draw, 64+1+w, y)
+
+    y += lineheight + 3
+    draw_center(draw, y, "TTN-GW last seen")
     y += lineheight
-    draw.text((x, y), "TTN: last seen " + str(TTNts),  font=font, fill=255)
+    draw_center(draw, y, str(TTNts.strftime("%Y-%m-%d %I:%M:%S")))
 
     # Display image
     disp.image(image)
