@@ -13,7 +13,7 @@ MQTT_SERVER = 'mqtt.thomo.de'
 # Data capture and upload interval in seconds. Less interval will eventually hang the DHT22.
 INTERVAL = 20
 
-TOPIC = 'tmp'
+TOPIC = 'f42'
 PAYLOAD = ("{},location={},node={},sensor={} value={:.2f}")
 ERRLOAD = ("error,location={},node={},sensor={} type={},value={}")
 
@@ -109,10 +109,10 @@ try:
             if not item['error']:
                 for v in item['values']:
                     # pass
-                    print(PAYLOAD.format(v['measurand'],item['location'],item['node'],item['sensor'],v['raw']+v['correction']))
+                    print(PAYLOAD.format(v['measurand'],item['location'],item['node'],item['sensor'],v['raw']+v['correction']), flush=True)
                     client.publish(TOPIC, PAYLOAD.format(v['measurand'],item['location'],item['node'],item['sensor'],v['raw']+v['correction']))
             else:
-                print(ERRLOAD.format(item['location'],item['node'],item['sensor'],item['error']['type'],item['error']['value']), file=sys.stderr)
+                print(ERRLOAD.format(item['location'],item['node'],item['sensor'],item['error']['type'],item['error']['value']), file=sys.stderr, flush=True)
                 client.publish(TOPIC, ERRLOAD.format(item['location'],item['node'],item['sensor'],item['error']['type'],item['error']['value']))
 
         next_reading += INTERVAL

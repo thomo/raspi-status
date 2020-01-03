@@ -1,11 +1,11 @@
 [Unit]
-Description=Fetch sensors
+Description=Update oled
 After=syslog.target
 
 [Service]
 Type=simple
 WorkingDirectory=/usr/local/bin
-ExecStart=/usr/local/bin/fetchsensors.py
+ExecStart=/usr/local/bin/updateoled.py
 Restart=always
 RestartSec=3
 
