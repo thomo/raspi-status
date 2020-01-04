@@ -15,7 +15,7 @@ INTERVAL = 20
 
 TOPIC = 'f42'
 PAYLOAD = ("{},location={},node={},sensor={} value={:.2f}")
-ERRLOAD = ("error,location={},node={},sensor={} type={},value={}")
+ERRLOAD = ("error,location={},node={},sensor={} type=\"{}\",value=\"{}\"")
 
 sensors = (
     { 
@@ -63,7 +63,7 @@ def readDS18B20(sensor):
         sensor['error'] = {}
     except:
         exc_type, exc_value, _1 = sys.exc_info()
-        sensor['error'] = { 'type': exc_type, 'value': exc_value }
+        sensor['error'] = { 'type': exc_type.__qualname__, 'value': exc_value }
 
 def readSI7021(bus, sensor):
     i2caddr = sensor['id']
@@ -80,7 +80,7 @@ def readSI7021(bus, sensor):
         sensor['error'] = {}
     except:
         exc_type, exc_value, _1 = sys.exc_info()
-        sensor['error'] = { 'type': exc_type, 'value': exc_value }
+        sensor['error'] = { 'type': exc_type.__qualname__, 'value': exc_value }
 
 next_reading = time.time() 
 
