@@ -15,6 +15,20 @@ Make adaptions in `sensors.json`
 - MQTT host
 - sensor read interval 
 
+## Run fetchsensors.py 
+
+```
+$ ./fetchsensors.py -h
+usage: fetchsensors.py [-h] [-c config_file] [--dry]
+
+Fetch and publish sensor values
+
+optional arguments:
+  -h, --help      show this help message and exit
+  -c config_file  use config file, default is /etc/sensors.json
+  --dry           dry run - do not publish values
+```
+
 ## Run fetchsensors.py as daemon
 
 ```
