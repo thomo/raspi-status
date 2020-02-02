@@ -9,12 +9,6 @@ import json
 import smbus
 import argparse
 
-MQTT_SERVER = 'xmqtt.thomo.de'
-
-# Data capture and upload interval in seconds. Less interval will eventually hang the DHT22.
-INTERVAL = 20
-
-TOPIC = 'f42'
 PAYLOAD = ("{},location={},node={},sensor={} value={:.2f}")
 ERRLOAD = ("error,location={},node={},sensor={} type=\"{}\",value=\"{}\"")
 
@@ -74,11 +68,14 @@ next_reading = time.time()
 
 try:
     with open(config_file) as f:
-        sensors = json.load(f)
+        config = json.load(f)
+        sensors = config['sensors']
 except FileNotFoundError:
     printErr('config file "' + config_file + '" not found!')
+    exit()
 except json.decoder.JSONDecodeError as e:
     printErr('syntax error in config file: ' + str(e))
+    exit()
 
 if not is_dry_run:
     client = mqtt.Client()
@@ -86,8 +83,8 @@ if not is_dry_run:
     # Set access token
     # client.username_pw_set(ACCESS_TOKEN)
 
-    # Connect to ThingsBoard using default MQTT port and 60 seconds keepalive interval
-    client.connect(MQTT_SERVER, 1883, 60)
+    # Connect default MQTT port and 60 seconds keepalive interval
+    client.connect(config['mqtt']['server'], 1883, 60)
     client.loop_start()
 
 if hasI2cSensor(sensors): 
@@ -103,17 +100,18 @@ try:
             else:
                 # ignore
                 pass
+
             if not item['error']:
                 for v in item['values']:
-                    print(PAYLOAD.format(v['measurand'],item['location'],item['node'],item['sensor'],v['raw']+v['correction']), flush=True)
+                    print(PAYLOAD.format(v['measurand'],item['location'],config['node'],item['sensor'],v['raw']+v['correction']), flush=True)
                     if not is_dry_run:
-                        client.publish(TOPIC, PAYLOAD.format(v['measurand'],item['location'],item['node'],item['sensor'],v['raw']+v['correction']))
+                        client.publish(config['mqtt']['topic'], PAYLOAD.format(v['measurand'],item['location'],config['node'],item['sensor'],v['raw']+v['correction']))
             else:
-                print(ERRLOAD.format(item['location'],item['node'],item['sensor'],item['error']['type'],item['error']['value']), file=sys.stderr, flush=True)
+                print(ERRLOAD.format(item['location'],config['node'],item['sensor'],item['error']['type'],item['error']['value']), file=sys.stderr, flush=True)
                 if not is_dry_run:
-                    client.publish(TOPIC, ERRLOAD.format(item['location'],item['node'],item['sensor'],item['error']['type'],item['error']['value']))
+                    client.publish(config['mqtt']['topic'], ERRLOAD.format(item['location'],config['node'],item['sensor'],item['error']['type'],item['error']['value']))
 
-        next_reading += INTERVAL
+        next_reading += config['interval']
         sleep_time = next_reading-time.time()
         if sleep_time > 0:
             time.sleep(sleep_time)
