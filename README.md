@@ -8,11 +8,12 @@
 
 ## Customize
 
-Make adaptions in `fetchsensors.py` 
+Make adaptions in `sensors.json` 
 
-- the 1-wire ids of the sensors 
+- the sensor data - id (1-wire id or i2c addr), location, measurement correction (simple +/- value)
 - MQTT topic
 - MQTT host
+- sensor read interval 
 
 ## Run fetchsensors.py as daemon
 
