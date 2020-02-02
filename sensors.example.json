@@ -1,0 +1,30 @@
+[
+    { 
+        "id": "28-0301a279dec6", 
+        "sensor": "DS18B20", 
+        "node": "ttn-gateway", 
+        "location": "ttnbox", 
+        "values": [ 
+            { "correction": -1.1, "measurand": "temperature"}
+        ]
+    }, 
+    {
+        "id": "28-0301a2794002", 
+        "sensor": "DS18B20", 
+        "node": "ttn-gateway", 
+        "location": "attic", 
+        "values": [ 
+            { "correction": -0.2, "measurand": "temperature"}
+        ]
+    },
+    {
+        "id": 64, 
+        "sensor": "Si7021", 
+        "node": "ttn-gateway", 
+        "location": "attic", 
+        "values": [ 
+            { "correction": -1.2, "measurand": "temperature"},
+            { "correction": 7.0, "measurand": "humidity"}
+        ]
+    }
+]

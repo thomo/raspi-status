@@ -1,8 +1,10 @@
 # fetchsensors
 
 ## Prerequisites
+(Used with Raspbian Buster)
 
 - sudo apt-get install python3-paho-mqtt 
+- sudo apt-get install python3-smbus
 
 ## Customize
 

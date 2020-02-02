@@ -7,8 +7,9 @@ import sys
 import paho.mqtt.client as mqtt
 import json
 import smbus
+import argparse
 
-MQTT_SERVER = 'mqtt.thomo.de'
+MQTT_SERVER = 'xmqtt.thomo.de'
 
 # Data capture and upload interval in seconds. Less interval will eventually hang the DHT22.
 INTERVAL = 20
@@ -17,39 +18,13 @@ TOPIC = 'f42'
 PAYLOAD = ("{},location={},node={},sensor={} value={:.2f}")
 ERRLOAD = ("error,location={},node={},sensor={} type=\"{}\",value=\"{}\"")
 
-sensors = (
-    { 
-        'id': '28-0301a279dec6', 
-        'sensor': 'DS18B20', 
-        'node': 'ttn-gateway', 
-        'location': 'ttnbox', 
-        'values': [ 
-            { 'correction': -1.1, 'measurand': 'temperature', 'raw': 0.0},
-        ], 
-        'error': {},
-    }, 
-    {
-        'id': '28-0301a2794002', 
-        'sensor': 'DS18B20', 
-        'node': 'ttn-gateway', 
-        'location': 'attic', 
-        'values': [ 
-            { 'correction': -0.2, 'measurand': 'temperature', 'raw': 0.0},
-        ],
-        'error': {},
-    },
-    {
-        'id': 0x40, 
-        'sensor': 'Si7021', 
-        'node': 'ttn-gateway', 
-        'location': 'attic', 
-        'values': [ 
-            { 'correction': -1.2, 'measurand': 'temperature', 'raw': 0.0},
-            { 'correction': 7.0, 'measurand': 'humidity', 'raw': 0.0}, 
-        ],
-        'error': {},
-    }
-)
+isDryRun = False
+
+def hasI2cSensor(sensors):
+    for item in sensors:
+        if item['sensor'] == 'Si7021':
+            return True
+    return False
 
 def readDS18B20(sensor): 
     try:
@@ -61,6 +36,8 @@ def readDS18B20(sensor):
         sensor['values'][0]['raw'] = float(tp[2:]) / 1000
 
         sensor['error'] = {}
+    except FileNotFoundError: 
+        sensor['error'] = { 'type': 'SensorNotFound', 'value': 'DS18B20 ' + sensor['id'] }
     except:
         exc_type, exc_value, _1 = sys.exc_info()
         sensor['error'] = { 'type': exc_type.__qualname__, 'value': exc_value }
@@ -82,19 +59,39 @@ def readSI7021(bus, sensor):
         exc_type, exc_value, _1 = sys.exc_info()
         sensor['error'] = { 'type': exc_type.__qualname__, 'value': exc_value }
 
+def printErr(msg):
+    print('ERROR - ' + msg, file=sys.stderr)
+
+parser = argparse.ArgumentParser(description='Fetch and publish sensor values')
+parser.add_argument('-c', help='use config file, default is /etc/sensors.json', default='/etc/sensors.json', metavar='config_file')
+parser.add_argument('--dry', action='store_true', help='dry run - do not publish values')
+args = parser.parse_args()
+
+is_dry_run = args.dry
+config_file = args.c
+
 next_reading = time.time() 
 
-client = mqtt.Client()
+try:
+    with open(config_file) as f:
+        sensors = json.load(f)
+except FileNotFoundError:
+    printErr('config file "' + config_file + '" not found!')
+except json.decoder.JSONDecodeError as e:
+    printErr('syntax error in config file: ' + str(e))
 
-# Set access token
-# client.username_pw_set(ACCESS_TOKEN)
+if not is_dry_run:
+    client = mqtt.Client()
 
-# Connect to ThingsBoard using default MQTT port and 60 seconds keepalive interval
-client.connect(MQTT_SERVER, 1883, 60)
+    # Set access token
+    # client.username_pw_set(ACCESS_TOKEN)
 
-client.loop_start()
+    # Connect to ThingsBoard using default MQTT port and 60 seconds keepalive interval
+    client.connect(MQTT_SERVER, 1883, 60)
+    client.loop_start()
 
-i2cbus = smbus.SMBus(1)
+if hasI2cSensor(sensors): 
+    i2cbus = smbus.SMBus(1)
 
 try:
     while True:
@@ -108,12 +105,13 @@ try:
                 pass
             if not item['error']:
                 for v in item['values']:
-                    # pass
                     print(PAYLOAD.format(v['measurand'],item['location'],item['node'],item['sensor'],v['raw']+v['correction']), flush=True)
-                    client.publish(TOPIC, PAYLOAD.format(v['measurand'],item['location'],item['node'],item['sensor'],v['raw']+v['correction']))
+                    if not is_dry_run:
+                        client.publish(TOPIC, PAYLOAD.format(v['measurand'],item['location'],item['node'],item['sensor'],v['raw']+v['correction']))
             else:
                 print(ERRLOAD.format(item['location'],item['node'],item['sensor'],item['error']['type'],item['error']['value']), file=sys.stderr, flush=True)
-                client.publish(TOPIC, ERRLOAD.format(item['location'],item['node'],item['sensor'],item['error']['type'],item['error']['value']))
+                if not is_dry_run:
+                    client.publish(TOPIC, ERRLOAD.format(item['location'],item['node'],item['sensor'],item['error']['type'],item['error']['value']))
 
         next_reading += INTERVAL
         sleep_time = next_reading-time.time()
@@ -122,6 +120,6 @@ try:
 except KeyboardInterrupt:
     pass
 
-
-client.loop_stop()
-client.disconnect()
+if not is_dry_run:
+    client.loop_stop()
+    client.disconnect()
