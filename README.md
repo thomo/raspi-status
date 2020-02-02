@@ -2,7 +2,6 @@
 
 ## Prerequisites
 
-- sudo pip3 install Adafruit-SSD1306
 - sudo apt-get install python3-paho-mqtt 
 
 ## Customize
@@ -31,6 +30,7 @@ sudo systemctl status fetchsensors
 
 ## Prerequisites
 
+- sudo pip3 install Adafruit-SSD1306
 - sudo apt-get install python3-dateutil 
 - sudo apt-get install python3-tz
 - sudo apt-get install jq
