@@ -28,8 +28,11 @@ def readDS18B20(sensor):
     
         tp = filecontent.split("\n")[1].split(" ")[9]
         sensor['values'][0]['raw'] = float(tp[2:]) / 1000
-
         sensor['error'] = {}
+
+        if sensor['values'][0]['raw'] > 120 or sensor['values'][0]['raw'] < -40:
+            sensor['error'] = { 'type': 'SensorValueInvalid', 'value':  str(sensor['values'][0]['raw']) }
+
     except FileNotFoundError: 
         sensor['error'] = { 'type': 'SensorNotFound', 'value': 'DS18B20 ' + sensor['id'] }
     except:
@@ -75,6 +78,9 @@ except FileNotFoundError:
     exit()
 except json.decoder.JSONDecodeError as e:
     printErr('syntax error in config file: ' + str(e))
+    exit()
+except:
+    printErr('Unexpected error while reading config file "' + config_file + '": ' + str(sys.exc_info()[1]))
     exit()
 
 if not is_dry_run:
