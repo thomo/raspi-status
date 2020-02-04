@@ -26,12 +26,15 @@ def readDS18B20(sensor):
         filecontent = file.read()
         file.close()
     
-        tp = filecontent.split("\n")[1].split(" ")[9]
-        sensor['values'][0]['raw'] = float(tp[2:]) / 1000
-        sensor['error'] = {}
+        if filecontent.split("\n")[0].strip()[-3:] != 'YES':
+            sensor['error'] = { 'type': 'SensorValueInvalid', 'value':  str(sensor['values'][0]['raw']) }
+        else:
+            tp = filecontent.split("\n")[1].split(" ")[9]
+            sensor['values'][0]['raw'] = float(tp[2:]) / 1000
+            sensor['error'] = {}
 
         if sensor['values'][0]['raw'] > 120 or sensor['values'][0]['raw'] < -40:
-            sensor['error'] = { 'type': 'SensorValueInvalid', 'value':  str(sensor['values'][0]['raw']) }
+            sensor['error'] = { 'type': 'SensorValueInvalid_2', 'value':  str(sensor['values'][0]['raw']) }
 
     except FileNotFoundError: 
         sensor['error'] = { 'type': 'SensorNotFound', 'value': 'DS18B20 ' + sensor['id'] }
@@ -60,8 +63,8 @@ def printErr(msg):
     print('ERROR - ' + msg, file=sys.stderr)
 
 parser = argparse.ArgumentParser(description='Fetch and publish sensor values')
-parser.add_argument('-c', help='use config file, default is /etc/sensors.json', default='/etc/sensors.json', metavar='config_file')
-parser.add_argument('--dry', action='store_true', help='dry run - do not publish values')
+parser.add_argument('-c',    help='use config file, default is /etc/sensors.json', default='/etc/sensors.json', metavar='config_file')
+parser.add_argument('--dry', help='dry run - do not publish values', action='store_true')
 args = parser.parse_args()
 
 is_dry_run = args.dry
@@ -77,10 +80,10 @@ except FileNotFoundError:
     printErr('config file "' + config_file + '" not found!')
     exit()
 except json.decoder.JSONDecodeError as e:
-    printErr('syntax error in config file: ' + str(e))
+    printErr('syntax error in config file "' + config_file + '": ' + str(e))
     exit()
 except:
-    printErr('Unexpected error while reading config file "' + config_file + '": ' + str(sys.exc_info()[1]))
+    printErr('error while reading config file "' + config_file + '": ' + str(sys.exc_info()[1]))
     exit()
 
 if not is_dry_run:
@@ -109,16 +112,18 @@ try:
 
             if not item['error']:
                 for v in item['values']:
-                    print(PAYLOAD.format(v['measurand'],item['location'],config['node'],item['sensor'],v['raw']+v['correction']), flush=True)
+                    msg = PAYLOAD.format(v['measurand'],item['location'],config['node'],item['sensor'],v['raw']+v['correction'])
+                    print(msg, flush=True)
                     if not is_dry_run:
-                        client.publish(config['mqtt']['topic'], PAYLOAD.format(v['measurand'],item['location'],config['node'],item['sensor'],v['raw']+v['correction']))
+                        client.publish(config['mqtt']['topic'], msg)
             else:
-                print(ERRLOAD.format(item['location'],config['node'],item['sensor'],item['error']['type'],item['error']['value']), file=sys.stderr, flush=True)
+                err_msg = ERRLOAD.format(item['location'],config['node'],item['sensor'],item['error']['type'],item['error']['value'])
+                print(err_msg, file=sys.stderr, flush=True)
                 if not is_dry_run:
-                    client.publish(config['mqtt']['topic'], ERRLOAD.format(item['location'],config['node'],item['sensor'],item['error']['type'],item['error']['value']))
+                    client.publish(config['mqtt']['topic'], err_msg)
 
         next_reading += config['interval']
-        sleep_time = next_reading-time.time()
+        sleep_time = next_reading - time.time()
         if sleep_time > 0:
             time.sleep(sleep_time)
 except KeyboardInterrupt:
