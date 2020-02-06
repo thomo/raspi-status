@@ -27,14 +27,17 @@ def readDS18B20(sensor):
         file.close()
     
         if filecontent.split("\n")[0].strip()[-3:] != 'YES':
-            sensor['error'] = { 'type': 'SensorValueInvalid', 'value':  str(sensor['values'][0]['raw']) }
+            sensor['error'] = { 'type': 'SensorValueInvalid', 'value': '???' }
         else:
             tp = filecontent.split("\n")[1].split(" ")[9]
             sensor['values'][0]['raw'] = float(tp[2:]) / 1000
             sensor['error'] = {}
 
-        if sensor['values'][0]['raw'] > 120 or sensor['values'][0]['raw'] < -40:
-            sensor['error'] = { 'type': 'SensorValueInvalid_2', 'value':  str(sensor['values'][0]['raw']) }
+            if sensor['values'][0]['raw'] > 120 or sensor['values'][0]['raw'] < -40:
+                sensor['error'] = { 
+                    'type': 'SensorValueInvalid_2', 
+                    'value':  str(sensor['values'][0]['raw']) 
+                }
 
     except FileNotFoundError: 
         sensor['error'] = { 'type': 'SensorNotFound', 'value': 'DS18B20 ' + sensor['id'] }
