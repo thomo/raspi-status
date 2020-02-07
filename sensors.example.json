@@ -24,6 +24,7 @@
         },
         {
             "id": 64, 
+            "channel": 4,
             "sensor": "Si7021", 
             "location": "sensor_location", 
             "values": [ 

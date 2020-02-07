@@ -49,6 +49,9 @@ def readSI7021(bus, sensor):
     i2caddr = sensor['id']
 
     try:
+        if 'channel' in sensor:
+            selectI2cChannel(bus, sensor['channel'])
+
         hm = bus.read_i2c_block_data(i2caddr, 0xE5, 2) 
         time.sleep(0.1)
         sensor['values'][1]['raw'] = ((hm[0] * 256 + hm[1]) * 125 / 65536.0) - 6
@@ -61,6 +64,10 @@ def readSI7021(bus, sensor):
     except:
         exc_type, exc_value, _1 = sys.exc_info()
         sensor['error'] = { 'type': exc_type.__qualname__, 'value': exc_value }
+
+def selectI2cChannel(bus, channel): 
+    bus.write_byte(0x70, 0b000000001 << channel )
+    time.sleep(0.1)
 
 def printErr(msg):
     print('ERROR - ' + msg, file=sys.stderr)

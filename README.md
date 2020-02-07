@@ -10,7 +10,9 @@
 
 Make adaptions in `sensors.json` 
 
-- the sensor data - id (1-wire id or i2c addr), location, measurement correction (simple +/- value)
+- the sensor data 
+  - id (1-wire id or i2c addr), location, measurement correction (simple +/- value)
+  - in case of a i2c multiplexer, the channel
 - MQTT topic
 - MQTT host
 - sensor read interval 
