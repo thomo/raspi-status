@@ -12,11 +12,13 @@ import argparse
 PAYLOAD = ("{},location={},node={},sensor={} value={:.2f}")
 ERRLOAD = ("error,location={},node={},sensor={} type=\"{}\",value=\"{}\"")
 
+SI7021 = 'Si7021'
+
 isDryRun = False
 
 def hasI2cSensor(sensors):
     for item in sensors:
-        if item['sensor'] == 'Si7021':
+        if item['i2c']:
             return True
     return False
 
@@ -52,11 +54,11 @@ def readSI7021(bus, sensor):
         if 'channel' in sensor:
             selectI2cChannel(bus, sensor['channel'])
 
-        hm = bus.read_i2c_block_data(i2caddr, 0xE5, 2) 
+        hm = bus.read_i2c_block_data(i2caddr, 0xE5, 3) 
         time.sleep(0.1)
         sensor['values'][1]['raw'] = ((hm[0] * 256 + hm[1]) * 125 / 65536.0) - 6
 
-        tp = bus.read_i2c_block_data(i2caddr, 0xE3, 2)
+        tp = bus.read_i2c_block_data(i2caddr, 0xE3, 3)
         time.sleep(0.1)
         sensor['values'][0]['raw'] = ((tp[0] * 256 + tp[1]) * 175.72 / 65536.0) - 46.85
 
@@ -66,11 +68,20 @@ def readSI7021(bus, sensor):
         sensor['error'] = { 'type': exc_type.__qualname__, 'value': exc_value }
 
 def selectI2cChannel(bus, channel): 
+    print('select channel')
     bus.write_byte(0x70, 0b000000001 << channel )
     time.sleep(0.1)
 
 def printErr(msg):
     print('ERROR - ' + msg, file=sys.stderr)
+
+def keepEnabledSensors(sensors):
+    return list(filter(lambda s: s['enabled'] == 1, sensors))
+
+def refineSensorConfig(sensors):
+    for s in sensors:
+        s['i2c'] = s['sensor'] == SI7021
+    return sensors
 
 parser = argparse.ArgumentParser(description='Fetch and publish sensor values')
 parser.add_argument('-c',    help='use config file, default is /etc/sensors.json', default='/etc/sensors.json', metavar='config_file')
@@ -80,12 +91,10 @@ args = parser.parse_args()
 is_dry_run = args.dry
 config_file = args.c
 
-next_reading = time.time() 
-
 try:
     with open(config_file) as f:
         config = json.load(f)
-        sensors = config['sensors']
+        sensors = refineSensorConfig(keepEnabledSensors(config['sensors']))
 except FileNotFoundError:
     printErr('config file "' + config_file + '" not found!')
     exit()
@@ -110,11 +119,13 @@ if hasI2cSensor(sensors):
     i2cbus = smbus.SMBus(1)
 
 try:
+    next_reading = time.time() 
+
     while True:
         for item in sensors:
             if item['sensor'] == 'DS18B20':
                 readDS18B20(item) 
-            elif item['sensor'] == 'Si7021':
+            elif item['sensor'] == SI7021:
                 readSI7021(i2cbus, item)
             else:
                 # ignore
