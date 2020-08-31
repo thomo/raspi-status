@@ -8,6 +8,9 @@ import paho.mqtt.client as mqtt
 import json
 import smbus
 import argparse
+import board
+import busio
+import adafruit_si7021
 
 PAYLOAD = ("{},location={},node={},sensor={} value={:.2f}")
 ERRLOAD = ("error,location={},node={},sensor={} type=\"{}\",value=\"{}\"")
@@ -48,21 +51,15 @@ def readDS18B20(sensor):
         sensor['error'] = { 'type': exc_type.__qualname__, 'value': exc_value }
 
 def readSI7021(bus, sensor):
-    i2caddr = sensor['id']
 
     try:
         if 'channel' in sensor:
             selectI2cChannel(bus, sensor['channel'])
 
-        hm = bus.read_i2c_block_data(i2caddr, 0xE5, 3) 
-        time.sleep(0.1)
-        sensor['values'][1]['raw'] = ((hm[0] * 256 + hm[1]) * 125 / 65536.0) - 6
-
-        tp = bus.read_i2c_block_data(i2caddr, 0xE3, 3)
-        time.sleep(0.1)
-        sensor['values'][0]['raw'] = ((tp[0] * 256 + tp[1]) * 175.72 / 65536.0) - 46.85
-
+        sensor['values'][1]['raw'] = si7021sensor.relative_humidity
+        sensor['values'][0]['raw'] = si7021sensor.temperature
         sensor['error'] = {}
+
     except:
         exc_type, exc_value, _1 = sys.exc_info()
         sensor['error'] = { 'type': exc_type.__qualname__, 'value': exc_value }
@@ -117,6 +114,7 @@ if not is_dry_run:
 
 if hasI2cSensor(sensors): 
     i2cbus = smbus.SMBus(1)
+    si7021sensor = adafruit_si7021.SI7021(busio.I2C(board.SCL, board.SDA))
 
 try:
     next_reading = time.time() 
