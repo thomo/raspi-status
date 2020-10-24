@@ -5,6 +5,7 @@
 
 - sudo apt-get install python3-paho-mqtt 
 - sudo apt-get install python3-smbus
+- sudo pip3 install htu21df
 
 ## Customize
 

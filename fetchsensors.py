@@ -8,14 +8,13 @@ import paho.mqtt.client as mqtt
 import json
 import smbus
 import argparse
-import board
-import busio
-import adafruit_si7021
+from htu21 import HTU21
 
 PAYLOAD = ("{},location={},node={},sensor={} value={:.2f}")
 ERRLOAD = ("error,location={},node={},sensor={} type=\"{}\",value=\"{}\"")
 
-SI7021 = 'Si7021'
+SENSOR_SI7021 = 'Si7021'
+SENSOR_HTU21 = 'HTU21'
 
 isDryRun = False
 
@@ -51,18 +50,40 @@ def readDS18B20(sensor):
         sensor['error'] = { 'type': exc_type.__qualname__, 'value': exc_value }
 
 def readSI7021(bus, sensor):
+    i2caddr = sensor['id']
 
     try:
         if 'channel' in sensor:
             selectI2cChannel(bus, sensor['channel'])
 
-        sensor['values'][1]['raw'] = si7021sensor.relative_humidity
-        sensor['values'][0]['raw'] = si7021sensor.temperature
+        hm = bus.read_i2c_block_data(i2caddr, 0xE5, 2) 
+        time.sleep(1.5)
+        sensor['values'][1]['raw'] = ((hm[0] * 256 + hm[1]) * 125 / 65536.0) - 6
+        
+        tp = bus.read_i2c_block_data(i2caddr, 0xE3, 2)
+        time.sleep(1.5)
+        sensor['values'][0]['raw'] = ((tp[0] * 256 + tp[1]) * 175.72 / 65536.0) - 46.85
+
         sensor['error'] = {}
 
     except:
         exc_type, exc_value, _1 = sys.exc_info()
-        sensor['error'] = { 'type': exc_type.__qualname__, 'value': exc_value }
+        sensor['error'] = { 'type': exc_type, 'value': exc_value }
+
+def readHTU21(bus, sensor):
+    try:
+        if 'channel' in sensor:
+            selectI2cChannel(bus, sensor['channel'])
+
+        htu = HTU21()
+
+        sensor['values'][0]['raw'] = htu.read_temperature()
+        sensor['values'][1]['raw'] = htu.read_humidity()
+        
+        sensor['error'] = {}
+    except:
+        exc_type, exc_value, _1 = sys.exc_info()
+        sensor['error'] = { 'type': exc_type, 'value': exc_value }
 
 def selectI2cChannel(bus, channel): 
     print('select channel')
@@ -70,14 +91,14 @@ def selectI2cChannel(bus, channel):
     time.sleep(0.1)
 
 def printErr(msg):
-    print('ERROR - ' + msg, file=sys.stderr)
+    print >> sys.stderr, 'ERROR - ' + msg
 
 def keepEnabledSensors(sensors):
     return list(filter(lambda s: s['enabled'] == 1, sensors))
 
 def refineSensorConfig(sensors):
     for s in sensors:
-        s['i2c'] = s['sensor'] == SI7021
+        s['i2c'] = ( s['sensor'] == SENSOR_SI7021 or s['sensor'] == SENSOR_HTU21 )
     return sensors
 
 parser = argparse.ArgumentParser(description='Fetch and publish sensor values')
@@ -114,7 +135,7 @@ if not is_dry_run:
 
 if hasI2cSensor(sensors): 
     i2cbus = smbus.SMBus(1)
-    si7021sensor = adafruit_si7021.SI7021(busio.I2C(board.SCL, board.SDA))
+    time.sleep(2)
 
 try:
     next_reading = time.time() 
@@ -123,8 +144,10 @@ try:
         for item in sensors:
             if item['sensor'] == 'DS18B20':
                 readDS18B20(item) 
-            elif item['sensor'] == SI7021:
+            elif item['sensor'] == SENSOR_SI7021:
                 readSI7021(i2cbus, item)
+            elif item['sensor'] == SENSOR_HTU21:
+                readHTU21(i2cbus, item)
             else:
                 # ignore
                 pass
@@ -132,12 +155,12 @@ try:
             if not item['error']:
                 for v in item['values']:
                     msg = PAYLOAD.format(v['measurand'],item['location'],config['node'],item['sensor'],v['raw']+v['correction'])
-                    print(msg, flush=True)
+                    print(msg)
                     if not is_dry_run:
                         client.publish(config['mqtt']['topic'], msg)
             else:
                 err_msg = ERRLOAD.format(item['location'],config['node'],item['sensor'],item['error']['type'],item['error']['value'])
-                print(err_msg, file=sys.stderr, flush=True)
+                print >> sys.stderr, err_msg
                 if not is_dry_run:
                     client.publish(config['mqtt']['topic'], err_msg)
 
