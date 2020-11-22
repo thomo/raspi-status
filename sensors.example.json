@@ -16,7 +16,7 @@
             ]
         }, 
         {
-            "id": "28-0301a2794002", 
+            "id": "28-0301a2794002",  
             "sensor": "DS18B20", 
             "enabled": 1, 
             "location": "sensor_location", 
@@ -26,9 +26,10 @@
         },
         {
             "id": 64, 
-            "channel": 4,
-            "sensor": "Si7021", 
-            "enabled": 1, 
+            "xxchannel": 4,
+            "sensor": "HTU21", 
+            "enabled": 1,
+            "node": "ttn-gateway", 
             "location": "sensor_location", 
             "values": [ 
                 { "correction": -1.2, "measurand": "temperature"},
