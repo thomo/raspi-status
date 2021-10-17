@@ -39,6 +39,9 @@ DC = 23
 SPI_PORT = 0
 SPI_DEVICE = 0
 
+def draw_text(d, x, y, msg):
+    d.text((x, y), msg, font=font, fill=255)
+
 def draw_center(d, y, msg):
     w, _1 = d.textsize(msg)
     d.text(((128-w)/2, y), msg, font=font, fill=255)
@@ -98,12 +101,12 @@ while True:
         cmd = "uptime| sed -E 's/^[^,]*up *//; s/, *[[:digit:]]* users?.*//; s/days/d/; s/ ?([[:digit:]]+):0?([[:digit:]]+)/\\1 h, \\2 m/'"
         Up = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
 
-        cmd = "grep 'temperature,location=ttnbox' /var/log/syslog | tail -1 | awk -F= '{printf \"%.1f\", $NF}'| tr -d '\n'"
+        cmd = "grep -a 'temperature,location=ttnbox' /var/log/syslog | tail -1 | awk -F= '{printf \"%.1f\", $NF}'| tr -d '\n'"
         T_in = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
-        cmd = "grep 'temperature,location=attic' /var/log/syslog | tail -1 | awk -F= '{printf \"%.1f\", $NF}'| tr -d '\n'"
+        cmd = "grep -a 'temperature,location=attic' /var/log/syslog | tail -1 | awk -F= '{printf \"%.1f\", $NF}'| tr -d '\n'"
         T_out = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
 
-        cmd = "curl -s http://noc.thethingsnetwork.org:8085/api/v2/gateways/eui-b827ebfffe06902a | jq -r '.timestamp'"
+        cmd = "curl -s https://mapper.packetbroker.net/api/v2/gateways/netID=000013,tenantID=ttn,id=eui-b827ebfffe06902a | jq -r '.updatedAt'"
         TTNts = parse(subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout)
         TTNts = TTNts.astimezone(timezone('Europe/Berlin'))
 
@@ -113,22 +116,22 @@ while True:
         # y += lineheight
         # draw.text((x, y), "IP: " + str(IP),  font=font, fill=255)
         y += lineheight
-        draw.text((x, y), str(CPU) + " " + str(MemUsage) + " " + str(Disk), font=font, fill=255)
+        draw_text(draw, x, y, str(CPU) + " " + str(MemUsage) + " " + str(Disk))
         
         y += lineheight
         msg = "In:" + str(T_in)
         w, _1 = draw.textsize(msg)
-        draw.text((x, y), msg,  font=font, fill=255)
+        draw_text(draw, x, y, msg)
         draw_celsius(draw, x+1+w, y)
         msg = "Out:" + str(T_out)
         w, _1 = draw.textsize(msg)
-        draw.text((64, y), msg,  font=font, fill=255)
+        draw_text(draw, 64, y, msg)
         draw_celsius(draw, 64+1+w, y)
 
         y += lineheight + 3
         draw_center(draw, y, "TTN-GW last seen")
         y += lineheight
-        draw_center(draw, y, str(TTNts.strftime("%Y-%m-%d %I:%M:%S")))
+        draw_center(draw, y, str(TTNts.strftime("%Y-%m-%d %H:%M:%S")))
 
         # Display image
         disp.image(image)
