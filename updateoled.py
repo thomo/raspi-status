@@ -1,30 +1,11 @@
-#!/usr/bin/python3 -u
-
-# Copyright (c) 2017 Adafruit Industries
-# Author: Tony DiCola & James DeVito
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+#!/usr/bin/env python
 
 import sys
 import time
-import Adafruit_SSD1306
 import subprocess
+import board
+import busio
+import adafruit_ssd1306
 
 from PIL import Image
 from PIL import ImageDraw
@@ -32,32 +13,48 @@ from PIL import ImageFont
 from pytz import timezone
 from dateutil.parser import parse
 
-# Raspberry Pi pin configuration:
-RST = None     # on the PiOLED this pin isnt used
-# Note the following are only used with SPI:
-DC = 23
-SPI_PORT = 0
-SPI_DEVICE = 0
+def check_required_tools():
+    """Check if required command line tools are available."""
+    try:
+        subprocess.run(['jq', '--version'], capture_output=True, check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("Error: 'jq' command not found. Please install it using:", file=sys.stderr)
+        print("  sudo apt-get install jq", file=sys.stderr)
+        sys.exit(1)
+
+# Check for required tools before starting
+check_required_tools()
+
+# Create the I2C interface
+i2c = busio.I2C(board.SCL, board.SDA)
+
+# Create the SSD1306 OLED display
+# Most displays are 128x64 or 128x32
+disp = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c)
 
 def draw_text(d, x, y, msg):
     d.text((x, y), msg, font=font, fill=255)
 
 def draw_center(d, y, msg):
-    w, _1 = d.textsize(msg)
-    d.text(((128-w)/2, y), msg, font=font, fill=255)
+    # Split text into lines and handle each line separately
+    lines = str(msg).splitlines()
+    if not lines:  # Handle empty string case
+        lines = ['']
+    for line in lines:
+        w = d.textlength(line, font=font)
+        d.text(((128-w)/2, y), line, font=font, fill=255)
+        # Get line height from bbox
+        bbox = font.getbbox(line)
+        line_height = bbox[3] - bbox[1]  # bottom - top
+        y += line_height  # Move to next line
 
 def draw_celsius(d, x, y):
     d.ellipse((x, y+2, x+3, y+2+3), outline=255, fill=0)
     d.text((x+5, y), "C",  font=font, fill=255)
 
-
-# 128x64 display with hardware I2C:
-disp = Adafruit_SSD1306.SSD1306_128_64(rst=RST)
-
-disp.begin()
-
-disp.clear()
-disp.display()
+# Clear the display
+disp.fill(0)
+disp.show()
 
 # Create blank image for drawing.
 # Make sure to create image with mode '1' for 1-bit color.
@@ -92,18 +89,21 @@ while True:
         # cmd = "hostname -I | cut -d\' \' -f1"
         # IP = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
         cmd = "top -bn1 | grep load | awk '{printf \"C: %.2f\", $(NF-2)}'"
-        CPU = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
+        Cpu = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
+        
         cmd = "free -m | awk 'NR==2{printf \"M: %.0f%%\", $3*100/$2 }'"
         MemUsage = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
+        
         cmd = "df -h | awk '$NF==\"/\"{printf \"D: %s\", $5}'"
         Disk = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
 
         cmd = "uptime| sed -E 's/^[^,]*up *//; s/, *[[:digit:]]* users?.*//; s/days/d/; s/ ?([[:digit:]]+):0?([[:digit:]]+)/\\1 h, \\2 m/'"
         Up = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
 
-        cmd = "grep -a 'temperature,location=ttnbox' /var/log/syslog | tail -1 | awk -F= '{printf \"%.1f\", $NF}'| tr -d '\n'"
+        cmd = "journalctl --since '-60sec' -t python | grep -a 'temperature,location=ttnbox' | tail -1 | awk -F= '{printf \"%.1f\", $NF}'| tr -d '\n'"
         T_in = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
-        cmd = "grep -a 'temperature,location=attic' /var/log/syslog | tail -1 | awk -F= '{printf \"%.1f\", $NF}'| tr -d '\n'"
+        
+        cmd = "journalctl --since '-60sec' -t python | grep -a 'temperature,location=attic' | tail -1 | awk -F= '{printf \"%.1f\", $NF}'| tr -d '\n'"
         T_out = subprocess.run(cmd, shell = True, encoding = 'UTF-8', capture_output=True ).stdout
 
         cmd = "curl -s https://mapper.packetbroker.net/api/v2/gateways/netID=000013,tenantID=ttn,id=eui-b827ebfffe06902a | jq -r '.updatedAt'"
@@ -113,18 +113,19 @@ while True:
         # Write text
         y = top
         draw_center(draw, y, "Up: " + str(Up))
-        # y += lineheight
-        # draw.text((x, y), "IP: " + str(IP),  font=font, fill=255)
-        y += lineheight
-        draw_text(draw, x, y, str(CPU) + " " + str(MemUsage) + " " + str(Disk))
+        
+        y += lineheight + 3
+        msg = str(Cpu) + " " + str(MemUsage) + " " + str(Disk)
+        dw = max(0, (128 - draw.textlength(msg, font=font)) / 2)
+        draw_text(draw, x + dw, y, msg)
         
         y += lineheight
-        msg = "In:" + str(T_in)
-        w, _1 = draw.textsize(msg)
+        msg = "In:" + str(T_in).strip()
+        w = draw.textlength(msg, font=font)
         draw_text(draw, x, y, msg)
         draw_celsius(draw, x+1+w, y)
-        msg = "Out:" + str(T_out)
-        w, _1 = draw.textsize(msg)
+        msg = "Out:" + str(T_out).strip()
+        w = draw.textlength(msg, font=font)
         draw_text(draw, 64, y, msg)
         draw_celsius(draw, 64+1+w, y)
 
@@ -135,7 +136,14 @@ while True:
 
         # Display image
         disp.image(image)
-        disp.display()
-        time.sleep(0.1)
+        disp.show()
+        
+        time.sleep(1.0)
+    except KeyboardInterrupt:
+        print("\nExiting gracefully...", file=sys.stderr, flush=True)
+        # Clear the display before exiting
+        disp.fill(0)
+        disp.show()
+        sys.exit(0)
     except:
         print(sys.exc_info(), file=sys.stderr, flush=True)

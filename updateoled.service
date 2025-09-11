@@ -1,11 +1,14 @@
 [Unit]
-Description=Update oled
-After=syslog.target
+Description=Update OLED Display
+After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/usr/local/bin
-ExecStart=/usr/local/bin/updateoled.py
+User=pi
+Group=pi
+WorkingDirectory=/usr/local/raspi-status
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/local/raspi-status/venv/bin/python /usr/local/raspi-status/updateoled.py
 Restart=always
 RestartSec=3
 

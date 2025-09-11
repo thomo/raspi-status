@@ -1,11 +1,14 @@
 [Unit]
-Description=Fetch sensors
-After=syslog.target
+Description=Fetch Sensor Data
+After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/usr/local/bin
-ExecStart=/usr/local/bin/fetchsensors.py
+User=pi
+Group=pi
+WorkingDirectory=/usr/local/raspi-status
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/local/raspi-status/venv/bin/python /usr/local/raspi-status/fetchsensors.py
 Restart=always
 RestartSec=3
 
