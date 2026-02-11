@@ -16,7 +16,7 @@ htu21df==0.1.4
 lgpio==0.2.2.0
 mock==5.2.0
 paho-mqtt==2.1.0
-pillow==11.3.0
+pillow==12.1.1
 pyftdi==0.57.1
 pyserial==3.5
 python-dateutil==2.9.0.post0
