@@ -1,0 +1,18 @@
+// filepath: .devcontainer/devcontainer.json
+{
+    "name": "Go Dev Container",
+    "dockerFile": "Dockerfile",
+    "context": "..",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "go.gopath": "/go"
+            },
+            "extensions": [
+                "golang.go"
+            ]
+        }
+    },
+    "postCreateCommand": "go mod tidy",
+    "remoteUser": "root"
+}
