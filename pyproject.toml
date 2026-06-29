@@ -9,7 +9,7 @@ dependencies = [
     "htu21df==0.1.4",
     "adafruit-circuitpython-ssd1306==2.12.21",
     "adafruit-blinka==8.66.0",
-    "pillow==11.3.0",
+    "pillow==12.2.0",
     "python-dateutil==2.9.0.post0",
     "pytz==2025.2",
 ]
