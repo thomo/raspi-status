@@ -4,7 +4,7 @@
 set -e
 
 # Default values
-DEFAULT_INSTALL_DIR="$(pwd)"
+DEFAULT_INSTALL_DIR="/opt/raspi-status"
 DEFAULT_USER="pi"
 DEFAULT_GROUP="pi"
 
