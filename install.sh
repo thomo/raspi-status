@@ -114,7 +114,7 @@ for service in "${SERVICES[@]}"; do
         # Update service configuration
         sed -i "s|User=pi|User=$SERVICE_USER|" "$tmp_service"
         sed -i "s|Group=pi|Group=$SERVICE_GROUP|" "$tmp_service"
-        sed -i "s|/usr/local/raspi-status|$INSTALL_DIR|g" "$tmp_service"
+        sed -i "s|/opt/raspi-status|$INSTALL_DIR|g" "$tmp_service"
 
         # Install service file
         mv "$tmp_service" "/etc/systemd/system/$service.service"
