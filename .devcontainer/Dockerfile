@@ -1,5 +1,5 @@
 # filepath: .devcontainer/Dockerfile
-FROM golang:1.18
+FROM golang:1.23
 
 # Install any additional tools you need here
 RUN apt-get update && apt-get install -y \

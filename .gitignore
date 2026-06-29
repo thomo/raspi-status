@@ -1,3 +1,4 @@
 sensors.json
 .venv
 sensorprobe/sensorprobe_service
+.DS_Store
