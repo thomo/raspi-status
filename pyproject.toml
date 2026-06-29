@@ -4,12 +4,12 @@ version = "0.1.0"
 description = "Raspberry Pi sensor data collector and OLED display updater"
 requires-python = ">=3.11"
 dependencies = [
-    "paho-mqtt>=2.1.0",
-    "smbus>=1.1",
-    "htu21df>=0.1.4",
-    "adafruit-circuitpython-ssd1306>=2.12.0",
-    "adafruit-blinka>=8.0.0",
-    "pillow>=11.0.0",
-    "python-dateutil>=2.9.0",
-    "pytz>=2025.1",
+    "paho-mqtt==2.1.0",
+    "smbus==1.1.post2",
+    "htu21df==0.1.4",
+    "adafruit-circuitpython-ssd1306==2.12.21",
+    "adafruit-blinka==8.66.0",
+    "pillow==11.3.0",
+    "python-dateutil==2.9.0.post0",
+    "pytz==2025.2",
 ]
