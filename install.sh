@@ -4,6 +4,7 @@
 set -e
 
 # Default values
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DEFAULT_INSTALL_DIR="/opt/raspi-status"
 DEFAULT_USER="pi"
 DEFAULT_GROUP="pi"
@@ -78,12 +79,12 @@ if ! command -v uv &>/dev/null; then
 fi
 
 # Handle installation directory
-if [ "$INSTALL_DIR" != "$DEFAULT_INSTALL_DIR" ]; then
+if [ "$INSTALL_DIR" != "$SCRIPT_DIR" ]; then
     print_status "Creating installation directory..."
     mkdir -p "$INSTALL_DIR"
 
     print_status "Copying files..."
-    cp -r ./* "$INSTALL_DIR/"
+    cp -r "$SCRIPT_DIR/"* "$INSTALL_DIR/"
 else
     print_status "Installing in current directory, skipping file copy..."
 fi
