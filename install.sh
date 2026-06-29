@@ -4,8 +4,7 @@
 set -e
 
 # Default values
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-DEFAULT_INSTALL_DIR="/opt/raspi-status"
+INSTALL_DIR="$(cd "$(dirname "$0")" && pwd)"
 DEFAULT_USER="pi"
 DEFAULT_GROUP="pi"
 
@@ -28,15 +27,6 @@ fi
 if ! grep -qi "raspberry pi" /proc/device-tree/model 2>/dev/null; then
     print_error "This script must be run on a Raspberry Pi"
     exit 1
-fi
-
-# Get installation directory
-read -p "Enter installation directory [$DEFAULT_INSTALL_DIR]: " INSTALL_DIR
-INSTALL_DIR=${INSTALL_DIR:-$DEFAULT_INSTALL_DIR}
-
-# Ensure absolute path
-if [[ "$INSTALL_DIR" != /* ]]; then
-    INSTALL_DIR="$(pwd)/$INSTALL_DIR"
 fi
 
 # Get user input
@@ -76,17 +66,6 @@ apt-get install -y \
 if ! command -v uv &>/dev/null; then
     print_status "Installing uv..."
     curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
-fi
-
-# Handle installation directory
-if [ "$INSTALL_DIR" != "$SCRIPT_DIR" ]; then
-    print_status "Creating installation directory..."
-    mkdir -p "$INSTALL_DIR"
-
-    print_status "Copying files..."
-    cp -r "$SCRIPT_DIR/"* "$INSTALL_DIR/"
-else
-    print_status "Installing in current directory, skipping file copy..."
 fi
 
 # Install Python packages with uv

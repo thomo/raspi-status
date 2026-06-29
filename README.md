@@ -55,13 +55,24 @@ sudo raspi-config
 
 ## Installation
 
+Clone the repository directly into the target installation directory, then run the installer from there:
+
 ```bash
-git clone https://github.com/thomo/raspi-status.git
-cd raspi-status
+sudo git clone https://github.com/thomo/raspi-status.git /opt/raspi-status
+cd /opt/raspi-status
 sudo ./install.sh
 ```
 
-The installer will ask for the installation location and the user/group to run services as, then use [uv](https://docs.astral.sh/uv/) to create a virtual environment and install dependencies, and configure the systemd services.
+The installer will ask for the user/group to run services as, then use [uv](https://docs.astral.sh/uv/) to create a virtual environment, install dependencies, and configure the systemd services.
+
+## Updating
+
+```bash
+cd /opt/raspi-status
+sudo ./update.sh
+```
+
+The script pulls the latest changes, syncs dependencies, and restarts any running services.
 
 ## Service Management
 
