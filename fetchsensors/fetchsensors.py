@@ -382,7 +382,7 @@ except:
     exit()
 
 if not is_dry_run:
-    client = mqtt.Client()
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 
     # Set access token
     # client.username_pw_set(ACCESS_TOKEN)
