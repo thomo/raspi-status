@@ -6,4 +6,4 @@ export GOOS=linux
 export GOARM=7
 
 # Build the Go program
-go build -o sensorprobe_service src/sensorprobe.go
+go build -o sensorprobe_service ./src/
