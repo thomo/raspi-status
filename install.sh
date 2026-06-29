@@ -4,22 +4,29 @@
 set -e
 
 # Default values
-DEFAULT_INSTALL_DIR="$(pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DEFAULT_INSTALL_DIR="/opt/raspi-status"
 DEFAULT_USER="pi"
 DEFAULT_GROUP="pi"
 
 # Function to print in color
 print_status() {
-    echo -e "\e[1;34m>>> $1\e[0m"
+    printf "\e[1;34m>>> %s\e[0m\n" "$1"
 }
 
 print_error() {
-    echo -e "\e[1;31mERROR: $1\e[0m"
+    printf "\e[1;31mERROR: %s\e[0m\n" "$1"
 }
 
 # Check if running as root
-if [ "$EUID" -ne 0 ]; then 
+if [ "$EUID" -ne 0 ]; then
     print_error "Please run as root (sudo)"
+    exit 1
+fi
+
+# Check if running on a Raspberry Pi
+if ! grep -qi "raspberry pi" /proc/device-tree/model 2>/dev/null; then
+    print_error "This script must be run on a Raspberry Pi"
     exit 1
 fi
 
@@ -54,9 +61,7 @@ fi
 print_status "Installing system dependencies..."
 apt-get update
 apt-get install -y \
-    python3-pip \
     python3-dev \
-    python3-venv \
     i2c-tools \
     libjpeg-dev \
     zlib1g-dev \
@@ -64,33 +69,35 @@ apt-get install -y \
     liblcms2-dev \
     libopenjp2-7 \
     libtiff6 \
+    curl \
     jq
 
+# Install uv if not already available
+if ! command -v uv &>/dev/null; then
+    print_status "Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
+fi
+
 # Handle installation directory
-if [ "$INSTALL_DIR" != "$DEFAULT_INSTALL_DIR" ]; then
+if [ "$INSTALL_DIR" != "$SCRIPT_DIR" ]; then
     print_status "Creating installation directory..."
     mkdir -p "$INSTALL_DIR"
-    
+
     print_status "Copying files..."
-    cp -r ./* "$INSTALL_DIR/"
+    cp -r "$SCRIPT_DIR/"* "$INSTALL_DIR/"
 else
     print_status "Installing in current directory, skipping file copy..."
 fi
 
-# Create and activate virtual environment
-print_status "Setting up Python virtual environment..."
-python3 -m venv "$INSTALL_DIR/venv"
-
-# Install Python packages
+# Install Python packages with uv
 print_status "Installing Python packages..."
-"$INSTALL_DIR/venv/bin/pip" install --upgrade pip
-"$INSTALL_DIR/venv/bin/pip" install -r "$INSTALL_DIR/requirements.txt"
+uv sync --project "$INSTALL_DIR"
 
 # Set permissions
 print_status "Setting permissions..."
 chown -R "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR"
 chmod 755 "$INSTALL_DIR"
-chmod 755 "$INSTALL_DIR"/*.py
+find "$INSTALL_DIR" -name "*.py" -exec chmod 755 {} +
 
 # Configure and install services
 print_status "Configuring systemd services..."
@@ -99,32 +106,31 @@ SERVICES=("updateoled" "fetchsensors")
 for service in "${SERVICES[@]}"; do
     read -p "Install $service service? [Y/n]: " install_service
     install_service=${install_service:-Y}
-    
+
     if [[ $install_service =~ ^[Yy] ]]; then
         # Create temporary file for service configuration
         tmp_service=$(mktemp)
-        cp "$INSTALL_DIR/$service.service" "$tmp_service"
-        
+        cp "$INSTALL_DIR/$service/$service.service" "$tmp_service"
+
         # Update service configuration
         sed -i "s|User=pi|User=$SERVICE_USER|" "$tmp_service"
         sed -i "s|Group=pi|Group=$SERVICE_GROUP|" "$tmp_service"
-        sed -i "s|WorkingDirectory=/usr/local/raspi-status|WorkingDirectory=$INSTALL_DIR|" "$tmp_service"
-        sed -i "s|/usr/local/raspi-status/venv|$INSTALL_DIR/venv|g" "$tmp_service"
-        
+        sed -i "s|/opt/raspi-status|$INSTALL_DIR|g" "$tmp_service"
+
         # Install service file
         mv "$tmp_service" "/etc/systemd/system/$service.service"
-        
+
         # Ask about enabling and starting
         read -p "Enable $service service to start at boot? [Y/n]: " enable_service
         enable_service=${enable_service:-Y}
-        
+
         if [[ $enable_service =~ ^[Yy] ]]; then
             systemctl enable "$service.service"
             print_status "$service.service enabled"
-            
+
             read -p "Start $service service now? [Y/n]: " start_service
             start_service=${start_service:-Y}
-            
+
             if [[ $start_service =~ ^[Yy] ]]; then
                 systemctl start "$service.service"
                 print_status "$service.service started"

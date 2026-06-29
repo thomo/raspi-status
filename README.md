@@ -40,6 +40,10 @@ Both `fetchsensors` and `updateoled` run as systemd services installed by `insta
 - SSD1306 OLED display (optional)
 - TCA9548A I²C multiplexer (optional, for multiple I²C sensors)
 
+### Software
+
+- [uv](https://docs.astral.sh/uv/) (installed automatically by `install.sh` if not present)
+
 ### System Configuration
 
 ```bash
@@ -57,7 +61,7 @@ cd raspi-status
 sudo ./install.sh
 ```
 
-The installer will ask for the installation location and the user/group to run services as, then set up a Python virtual environment, install dependencies, and configure the systemd services.
+The installer will ask for the installation location and the user/group to run services as, then use [uv](https://docs.astral.sh/uv/) to create a virtual environment and install dependencies, and configure the systemd services.
 
 ## Service Management
 
