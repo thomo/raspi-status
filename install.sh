@@ -10,16 +10,22 @@ DEFAULT_GROUP="pi"
 
 # Function to print in color
 print_status() {
-    echo -e "\e[1;34m>>> $1\e[0m"
+    printf "\e[1;34m>>> %s\e[0m\n" "$1"
 }
 
 print_error() {
-    echo -e "\e[1;31mERROR: $1\e[0m"
+    printf "\e[1;31mERROR: %s\e[0m\n" "$1"
 }
 
 # Check if running as root
 if [ "$EUID" -ne 0 ]; then
     print_error "Please run as root (sudo)"
+    exit 1
+fi
+
+# Check if running on a Raspberry Pi
+if ! grep -qi "raspberry pi" /proc/device-tree/model 2>/dev/null; then
+    print_error "This script must be run on a Raspberry Pi"
     exit 1
 fi
 
