@@ -69,7 +69,7 @@ Example:
 
 ```bash
 # Activate the venv first (from repo root)
-source ../venv/bin/activate
+source ../.venv/bin/activate
 
 # Normal operation
 ./fetchsensors.py

@@ -8,7 +8,7 @@ User=pi
 Group=pi
 WorkingDirectory=/usr/local/raspi-status
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/usr/local/raspi-status/venv/bin/python /usr/local/raspi-status/fetchsensors.py
+ExecStart=/usr/local/raspi-status/.venv/bin/python /usr/local/raspi-status/fetchsensors/fetchsensors.py
 Restart=always
 RestartSec=3
 
