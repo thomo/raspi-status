@@ -7,7 +7,7 @@ dependencies = [
     "paho-mqtt==2.1.0",
     "smbus==1.1.post2",
     "htu21df==0.1.4",
-    "adafruit-circuitpython-ssd1306==2.12.21",
+    "adafruit-circuitpython-ssd1306==2.12.24",
     "adafruit-blinka==8.66.0",
     "pillow==13.0.0",
     "python-dateutil==2.9.0.post0",
