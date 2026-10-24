@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 14
+
+  - package-ecosystem: "gomod"
+    directory: "/sensorprobe"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 14
+
+  - package-ecosystem: "docker"
+    directory: "/.devcontainer"
+    schedule:
+      interval: "monthly"
+    cooldown:
+      default-days: 14

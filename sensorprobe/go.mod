@@ -1,10 +1,12 @@
 module sensorprobe
 
-go 1.25.0
+go 1.26.0
+
+toolchain go1.26.10
 
 require (
 	github.com/d2r2/go-i2c v0.0.0-20191123181816-73a8a799d6bc
-	github.com/gookit/config/v2 v2.2.8
+	github.com/gookit/config/v2 v2.2.9
 	github.com/influxdata/influxdb-client-go/v2 v2.14.0
 )
 
@@ -15,13 +17,13 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/uuid v1.3.1 // indirect
-	github.com/gookit/goutil v0.7.5 // indirect
+	github.com/gookit/goutil v0.8.0 // indirect
 	github.com/gookit/properties v0.4.1 // indirect
 	github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
 	github.com/oapi-codegen/runtime v1.0.0 // indirect
-	golang.org/x/net v0.55.0 // indirect
-	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
-	golang.org/x/term v0.43.0 // indirect
-	golang.org/x/text v0.37.0 // indirect
+	golang.org/x/net v0.61.0 // indirect
+	golang.org/x/sync v0.24.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/term v0.47.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 )
