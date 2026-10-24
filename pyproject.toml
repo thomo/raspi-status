@@ -11,5 +11,5 @@ dependencies = [
     "adafruit-blinka==8.66.0",
     "pillow==13.0.0",
     "python-dateutil==2.9.0.post0",
-    "pytz==2025.2",
+    "pytz==2026.5",
 ]
