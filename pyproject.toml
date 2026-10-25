@@ -12,4 +12,19 @@ dependencies = [
     "pillow==13.0.0",
     "python-dateutil==2.9.0.post0",
     "pytz==2026.5",
+    # Required by adafruit-blinka; listed so the piwheels source below applies to it
+    "sysv-ipc==1.2.0; sys_platform == 'linux'",
 ]
+
+# PyPI has no 32-bit ARM wheels for pillow, smbus and sysv-ipc, so on a
+# Raspberry Pi uv would compile them from source. Take prebuilt wheels from
+# piwheels there instead.
+[[tool.uv.index]]
+name = "piwheels"
+url = "https://www.piwheels.org/simple"
+explicit = true
+
+[tool.uv.sources]
+pillow = [{ index = "piwheels", marker = "platform_machine == 'armv6l' or platform_machine == 'armv7l'" }]
+smbus = [{ index = "piwheels", marker = "platform_machine == 'armv6l' or platform_machine == 'armv7l'" }]
+sysv-ipc = [{ index = "piwheels", marker = "platform_machine == 'armv6l' or platform_machine == 'armv7l'" }]
