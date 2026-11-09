@@ -10,7 +10,7 @@ dependencies = [
     "adafruit-circuitpython-ssd1306==2.12.24",
     "adafruit-blinka==9.2.0",
     "pillow==13.0.0",
-    "python-dateutil==2.9.0.post0",
+    "python-dateutil==3.0.0",
     "pytz==2026.5",
     # Required by adafruit-blinka; listed so the piwheels source below applies to it
     "sysv-ipc==1.2.0; sys_platform == 'linux'",
