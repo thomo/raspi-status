@@ -6,7 +6,7 @@ toolchain go1.26.10
 
 require (
 	github.com/d2r2/go-i2c v0.0.0-20191123181816-73a8a799d6bc
-	github.com/gookit/config/v2 v2.2.9
+	github.com/gookit/config/v2 v2.2.10
 	github.com/influxdata/influxdb-client-go/v2 v2.14.0
 )
 
@@ -17,7 +17,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/uuid v1.3.1 // indirect
-	github.com/gookit/goutil v0.8.0 // indirect
+	github.com/gookit/goutil v0.8.6 // indirect
 	github.com/gookit/properties v0.4.1 // indirect
 	github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
 	github.com/oapi-codegen/runtime v1.0.0 // indirect
