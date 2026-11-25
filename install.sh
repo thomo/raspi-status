@@ -97,7 +97,11 @@ for service in "${SERVICES[@]}"; do
         sed -i "s|/opt/raspi-status|$INSTALL_DIR|g" "$tmp_service"
 
         # Install service file
-        mv "$tmp_service" "/etc/systemd/system/$service.service"
+        install -m 644 "$tmp_service" "/etc/systemd/system/$service.service"
+        rm -f "$tmp_service"
+
+        # Pick up the new/changed service file before enabling or starting it
+        systemctl daemon-reload
 
         # Ask about enabling and starting
         read -p "Enable $service service to start at boot? [Y/n]: " enable_service
@@ -111,15 +115,13 @@ for service in "${SERVICES[@]}"; do
             start_service=${start_service:-Y}
 
             if [[ $start_service =~ ^[Yy] ]]; then
-                systemctl start "$service.service"
+                # restart also replaces an already running older version
+                systemctl restart "$service.service"
                 print_status "$service.service started"
             fi
         fi
     fi
 done
-
-# Reload systemd to pick up new/changed service files
-systemctl daemon-reload
 
 print_status "Installation complete!"
 echo
