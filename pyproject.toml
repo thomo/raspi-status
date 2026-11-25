@@ -8,7 +8,9 @@ dependencies = [
     "smbus==1.1.post2",
     "htu21df==0.1.4",
     "adafruit-circuitpython-ssd1306==2.12.24",
-    "adafruit-blinka==9.2.0",
+    "adafruit-blinka==10.1.0",
+    # Blinka needs gpiod on every Raspberry Pi but does not declare it
+    "gpiod==2.6.0; sys_platform == 'linux'",
     "pillow==13.0.0",
     "python-dateutil==4.0.0",
     "pytz==2026.6",
@@ -16,7 +18,7 @@ dependencies = [
     "sysv-ipc==1.2.0; sys_platform == 'linux'",
 ]
 
-# PyPI has no 32-bit ARM wheels for pillow, smbus and sysv-ipc, so on a
+# PyPI has no 32-bit ARM wheels for gpiod, pillow, smbus and sysv-ipc, so on a
 # Raspberry Pi uv would compile them from source. Take prebuilt wheels from
 # piwheels there instead.
 [[tool.uv.index]]
@@ -25,6 +27,7 @@ url = "https://www.piwheels.org/simple"
 explicit = true
 
 [tool.uv.sources]
+gpiod = [{ index = "piwheels", marker = "platform_machine == 'armv7l'" }]
 pillow = [{ index = "piwheels", marker = "platform_machine == 'armv7l'" }]
 smbus = [{ index = "piwheels", marker = "platform_machine == 'armv7l'" }]
 sysv-ipc = [{ index = "piwheels", marker = "platform_machine == 'armv7l'" }]
